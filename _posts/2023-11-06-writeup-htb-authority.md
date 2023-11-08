@@ -2,7 +2,7 @@
 title: Authority - Hack the Box (htb)
 date: 2023-11-08 14:09:00 +0800
 categories: [writeup, htb]
-tags: [htb,ctf,windows, hack the box,ESC1,cracking]
+tags: [htb,ctf,windows,hack the box,ESC1,cracking]
 math: true
 mermaid: true
 image:
